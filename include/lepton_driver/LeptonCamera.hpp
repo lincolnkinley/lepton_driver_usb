@@ -32,8 +32,19 @@ enum LeptonCaptureBits
 class LeptonCamera
 {
 public:
+    /**
+     * @brief Constructor for the Lepton Camera
+     * @param port_id Port used by libuvc to handle the webcam. This should be a unique number if using multiple webcams
+     * @param capture_bits LEPTON_CAPTURE_8_BIT or LEPTON_CAPTURE_14_BIT
+     * @param callback Optional. callback function that will be called when an image is returned by the camera
+     * @param verbose Optional. Prints out more information
+     * @param serial_number Optional. Uses the serial number of the device to open the camera instead of the VID and
+     * PID. Use this if you are capturing data from multiple Lepton Cameras at the same time. To find the Serial number,
+     * run sudo lsusb -v (must be sudo, otherwise the actual serial number will not be listed), and find the iSerial
+     * parameter of the desired camera. It should look something like this: 12345678-1234-1234-1234-123456789012
+     */
     LeptonCamera(uint16_t port_id, LeptonCaptureBits capture_bits,
-                 std::function<void(uvc_frame_t *)> callback = nullptr, bool verbose = false);
+                 std::function<void(uvc_frame_t *)> callback = nullptr, bool verbose = false, const char* serial_number = NULL);
 
     ~LeptonCamera() noexcept;
 
@@ -47,6 +58,12 @@ public:
      * and 0.5 seconds in others. Consider not using this function unless you really need to.
      */
     bool SetCaptureBits(LeptonCaptureBits input);
+
+    /**
+     * @brief Gets the private capture_bits variable
+     * @return LEPTON_CAPTURE_8_BIT or LEPTON_CAPTURE_16_BIT
+     */
+    LeptonCaptureBits GetCaptureBits();
 
     /**
      * @brief Gets the latest frame captured by the Lepton camera
@@ -917,6 +934,11 @@ private:
      * Manages inputs and outputs from libuvc
      */
     UvcManager _uvc_manager;
+    
+    /**
+     * @brief Copy of the number of bits being captured separate from the Lepton camera for easy access.
+     */
+    LeptonCaptureBits _capture_bits;
 
 };
 

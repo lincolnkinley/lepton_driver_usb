@@ -31,10 +31,13 @@ void uvc_callback(uvc_frame_t *frame, void *ptr)
 }
 
 UvcManager::UvcManager(uint16_t device_vid, uint16_t device_pid, uint16_t resolution_width, uint16_t resolution_height,
-                       uvc_frame_format uvc_format, std::function<void(uvc_frame_t *)> callback, bool verbose)
+                       uvc_frame_format uvc_format, std::function<void(uvc_frame_t *)> callback,
+                       const char *serial_number, bool verbose)
 {
+    _dev = NULL;
     _device_vid = device_vid;
     _device_pid = device_pid;
+    _serial_number = serial_number;
     _resolution_width = resolution_width;
     _resolution_height = resolution_height;
     _uvc_format = uvc_format;
@@ -170,7 +173,7 @@ bool UvcManager::InitUvc()
 
 bool UvcManager::FindDevice()
 {
-    uvc_error_t res = uvc_find_device(_ctx, &_dev, _device_vid, _device_pid, NULL);
+    uvc_error_t res = uvc_find_device(_ctx, &_dev, _device_vid, _device_pid, _serial_number);
 
     if (res < 0)
     {
@@ -191,10 +194,10 @@ bool UvcManager::OpenDevice()
     {
         if (_verbose == true)
         {
-            printf("OpenDevice() failed: %d\nIf you're seeing this, it's likely because the lepton drivers do not have access to the device. You can set this program to run with root privileges, or special privileges are not required to read the VID and PID.\n", res);
-            // If you are on linux, run this command
-            // find /dev/bus/usb/*/* -exec ls -l {} \;
-            // non-privileged users will need write permissions on these files to be able to read the lepton camera.
+            printf("OpenDevice() failed: %d\nIf you're seeing this, it's likely because the lepton drivers do "
+                   "not have access to the device. You can set this program to run with root privileges, or change the "
+                   "privileges for this device. To change privileges, first run lsusb and take note of Bus XXX Device "
+                   "YYY of Cubeternet WebCam. Next run 'sudo chmod 777 /dev/bus/usb/XXX/YYY'.\n", res);
         }
 
         uvc_unref_device(_dev);
@@ -213,6 +216,7 @@ bool UvcManager::FormatDevice()
 
     if (res < 0)
     {
+        // If this fails, it's most likely that the lepton camera module isn't plugged in all the way
         if (_verbose == true)
         {
             printf("FormatDevice() failed: %d\n", res);

@@ -23,10 +23,11 @@ public:
      * @param resolution_height Height of the image being captured.
      * @param uvc_format Format of the image being captured.
      * @param callback Optional callback that will be called every time an image is captured. If this is nullptr, then no callback is used.
+     * @param serial_number Optional serial number used to open a specific device. If this is nullptr, VID and PID are used to open the device.
      * @param verbose Sets the verbosity of the UvcManaged, useful for debugging.
      */
     UvcManager(uint16_t device_vid, uint16_t device_pid, uint16_t resolution_width, uint16_t resolution_height,
-               uvc_frame_format uvc_format, std::function<void(uvc_frame_t*)> callback, bool verbose);
+               uvc_frame_format uvc_format, std::function<void(uvc_frame_t*)> callback, const char* serial_number, bool verbose);
 
     /**
      * @brief Destructor for UvcManager. Severs the UVC connection before deallocation.
@@ -107,6 +108,11 @@ private:
      * @brief UVC device stream controller.
      */
     uvc_stream_ctrl_t _ctrl;
+    
+    /**
+     * @brief Serial Number of the device. Optionally used to open a device with a specific serial number. NULL if not used.
+     */
+    const char* _serial_number;
 
     /**
      * @brief Mutex for reading and writing _last_frame.

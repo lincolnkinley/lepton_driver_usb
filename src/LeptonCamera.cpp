@@ -14,10 +14,10 @@
 #include "lepton_driver/LeptonCamera.hpp"
 
 LeptonCamera::LeptonCamera(uint16_t port_id, LeptonCaptureBits capture_bits,
-                           std::function<void(uvc_frame_t *)> callback, bool verbose) : _uvc_manager(
+                           std::function<void(uvc_frame_t *)> callback, bool verbose, const char *serial_number)
+        : _uvc_manager(
         LEPTON_VID, LEPTON_PID, LEPTON_RESOLUTION_WIDTH, LEPTON_RESOLUTION_HEIGHT,
-        static_cast<uvc_frame_format>(capture_bits), callback,
-        verbose)
+        static_cast<uvc_frame_format>(capture_bits), callback, serial_number, verbose)
 {
     _camera_port_descriptor.portID = port_id;
     _camera_port_descriptor.portType = LEP_CCI_UVC;
@@ -28,11 +28,17 @@ LeptonCamera::LeptonCamera(uint16_t port_id, LeptonCaptureBits capture_bits,
     {
         throw;
     }
+    _capture_bits = capture_bits;
 }
 
 LeptonCamera::~LeptonCamera() noexcept
 {
     LEP_RESULT result = LEP_ClosePort(&_camera_port_descriptor);
+}
+
+LeptonCaptureBits LeptonCamera::GetCaptureBits()
+{
+    return _capture_bits;
 }
 
 cv::Mat LeptonCamera::GetLastFrame()
@@ -42,8 +48,14 @@ cv::Mat LeptonCamera::GetLastFrame()
 
 bool LeptonCamera::SetCaptureBits(LeptonCaptureBits input)
 {
-    return _uvc_manager.SetVideoFormat(LEPTON_RESOLUTION_WIDTH, LEPTON_RESOLUTION_HEIGHT,
-                                       static_cast<uvc_frame_format>(input));
+    bool success = _uvc_manager.SetVideoFormat(LEPTON_RESOLUTION_WIDTH, LEPTON_RESOLUTION_HEIGHT,
+                                               static_cast<uvc_frame_format>(input));
+    if (success == true)
+    {
+        _capture_bits = input;
+        return true;
+    }
+    return false;
 }
 
 /***************************************************************************************************
